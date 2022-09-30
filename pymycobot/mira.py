@@ -1,7 +1,5 @@
 # coding: utf-8
-from ctypes.wintypes import SIZE
 import time
-from tkinter import E
 from pymycobot.common import ProtocolCode
 import math
 
@@ -61,7 +59,8 @@ class Mira:
                         try:
                             all = list(map(float, a[astart + 1 : aend].split(",")))
                             return all[:3]
-                        except Exception:
+                        except Exception as e:
+                            print(e)
                             print("received angles is not completed! Retry receive...")
                             count += 1
                             continue
@@ -74,7 +73,8 @@ class Mira:
                         try:
                             all = list(map(float, c[cstart + 1 : cend].split(",")))
                             return all[:3]
-                        except Exception:
+                        except Exception as e:
+                            print(e)
                             print("received coords is not completed! Retry receive...")
                             count += 1
                             continue
@@ -186,7 +186,23 @@ class Mira:
         self._serial_port.flush()
         self._debug(command)
         return self._request("coord")
+    
+    def is_in_position(self):
+        """Judge whether in the position.
+        
+        Return:
+            bool: True/False
 
+        """
+        angles_data = self.get_angles_info()
+        coords_data = self.get_coords_info()
+        radians_data = self.get_radians_info()
+        if angles_data or coords_data or radians_data != None:
+            self.sleep(1)
+            return True
+        else:
+            return False
+        
     def get_switch_state(self):
         """Get the current state of all home switches."""
         command = ProtocolCode.GET_BACK_ZERO_STATUS + ProtocolCode.END
@@ -536,3 +552,5 @@ class Mira:
             command = ""
 
         self.set_speed_mode(2)  # Acceleration / deceleration mode
+
+
