@@ -4,7 +4,6 @@ import serial.tools.list_ports
 from pymycobot.mycobot import MyCobot
 
 
-
 def setup():
     print("")
 
@@ -35,4 +34,3 @@ def setup():
     # mc = MyCobot(port, debug=True)
     mc = MyCobot(port, baud, debug=DEBUG)
     return mc
-
