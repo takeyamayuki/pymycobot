@@ -1,5 +1,3 @@
-#!/usr/bin/python
-# -*- coding:utf-8 -*-
 # This code is suitable for using the mycobot 280 M5 device to draw simple patterns
 # such as triangles, squares, and five-pointed stars.
 # It controls the movement of the robotic arm by parsing instructions in a gcode file to implement drawing operations.
@@ -17,7 +15,7 @@ import time
 from pymycobot.mycobot280 import MyCobot280  # import mycobot library,if don't have, first 'pip install pymycobot'
 
 # use PC and M5 control
-mc = MyCobot280('COM14', 115200)  # WINDOWS use ，need check port number when you PC
+mc = MyCobot280('/dev/tty.usbserial-54F70003481', 115200)  # WINDOWS use ，need check port number when you PC
 # mc = MyCobot('/dev/ttyUSB0',115200)           # VM linux use
 time.sleep(0.5)
 
@@ -36,6 +34,7 @@ time.sleep(1.5)
 data_coords = []
 # Set the drawing speed to 100, and the speed range is 0~100
 draw_speed = 100
+SLEEP_TIME = 1
 
 
 def process_gcode(file_path):
@@ -79,16 +78,16 @@ if type == 1:
     # Send coordinates to the robot arm one by one
     for i in coords_data:
         mc.send_coords(i, draw_speed, 1)  # Send coordinates to the robot arm
-        time.sleep(3.5)  # Wait 3.5 seconds for the robot arm movement to complete
+        time.sleep(SLEEP_TIME)  # Wait 3.5 seconds for the robot arm movement to complete
 elif type == 2:
     coords_data = process_gcode('triangle.nc')
     for i in coords_data:
         mc.send_coords(i, draw_speed, 1)
-        time.sleep(3.5)
+        time.sleep(SLEEP_TIME)
 elif type == 3:
     coords_data = process_gcode('five_point_star.nc')
     for i in coords_data:
         mc.send_coords(i, draw_speed, 1)
-        time.sleep(3.5)
+        time.sleep(SLEEP_TIME)
 elif type == 4:
     exit(0)
