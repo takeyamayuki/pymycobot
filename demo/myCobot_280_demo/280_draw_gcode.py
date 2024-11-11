@@ -12,10 +12,15 @@
 
 # import library
 import time
-from pymycobot.mycobot280 import MyCobot280  # import mycobot library,if don't have, first 'pip install pymycobot'
+import math
+from pymycobot.mycobot280 import (
+    MyCobot280,
+)  # import mycobot library,if don't have, first 'pip install pymycobot'
 
 # use PC and M5 control
-mc = MyCobot280('/dev/tty.usbserial-54F70003481', 115200)  # WINDOWS use ，need check port number when you PC
+mc = MyCobot280(
+    "/dev/tty.usbserial-54F70003481", 115200
+)  # WINDOWS use ，need check port number when you PC
 # mc = MyCobot('/dev/ttyUSB0',115200)           # VM linux use
 time.sleep(0.5)
 
@@ -34,7 +39,7 @@ time.sleep(1.5)
 data_coords = []
 # Set the drawing speed to 100, and the speed range is 0~100
 draw_speed = 100
-SLEEP_TIME = 1
+SLEEP_TIME = 3.5  # Set the sleep time to 0.5 seconds
 
 
 def process_gcode(file_path):
@@ -46,46 +51,83 @@ def process_gcode(file_path):
     # The last valid coordinate, using the rx, ry, rz values
     # in the current coordinates of the robot arm as the starting attitude
     last_coords = [0.0, 0.0, 0.0, get_coords[3], get_coords[4], get_coords[5]]
-    with open(file_path, 'r') as file:
+    with open(file_path, "r") as file:
         # Line-by-line processing instructions
         for line in file:
-            command = line.strip()  # Remove newline characters and other whitespace characters at the end of the line
+            command = (
+                line.strip()
+            )  # Remove newline characters and other whitespace characters at the end of the line
             if command.startswith("G0") or command.startswith("G1"):  # Move command
                 coords = last_coords[:]  # Copy the previous valid coordinates
                 command_parts = command.split()
                 for part in command_parts[1:]:
                     if part.startswith("X") or part.startswith("x"):
-                        coords[0] = float(part[1:])  # Extract and transform X coordinate data
+                        coords[0] = float(
+                            part[1:]
+                        )  # Extract and transform X coordinate data
                     elif part.startswith("Y") or part.startswith("y"):
-                        coords[1] = float(part[1:])  # Extract and transform Y coordinate data
+                        coords[1] = float(
+                            part[1:]
+                        )  # Extract and transform Y coordinate data
                     elif part.startswith("Z") or part.startswith("z"):
-                        coords[2] = float(part[1:])  # Extract and transform Z coordinate data
-                if coords[0] == 0.0 and coords[1] == 0.0:  # If XY data is missing, use the last valid XY coordinates
+                        coords[2] = float(
+                            part[1:]
+                        )  # Extract and transform Z coordinate data
+                if (
+                    coords[0] == 0.0 and coords[1] == 0.0
+                ):  # If XY data is missing, use the last valid XY coordinates
                     coords[0] = last_coords[0]
                     coords[1] = last_coords[1]
-                if coords[2] == 0.0:  # If Z data is missing, use the last valid Z coordinate
+                if (
+                    coords[2] == 0.0
+                ):  # If Z data is missing, use the last valid Z coordinate
                     coords[2] = last_coords[2]
                 last_coords = coords
                 data_coords.append(coords)  # Add coordinates to list and save
     return data_coords
 
 
-type = int(input('Please input 1-4（1-square 2-triangle 3-five point star 4-quit）:'))
+# 初期値として前回の座標をNoneに設定
+previous_coords = None
+
+type = int(input("Please input 1-4（1-square 2-triangle 3-five point star 4-quit）:"))
 if type == 1:
     # Pass in the gcode file path and obtain the coordinate data
     # File path can be customized
-    coords_data = process_gcode('square.nc')
+    coords_data = process_gcode(
+        "/Users/yukitakeyama/Documents/research/ClayTablet_HCI211robot/stroke_data.gcode"
+    )
     # Send coordinates to the robot arm one by one
     for i in coords_data:
-        mc.send_coords(i, draw_speed, 1)  # Send coordinates to the robot arm
-        time.sleep(SLEEP_TIME)  # Wait 3.5 seconds for the robot arm movement to complete
+        # 現在の座標を取得
+        current_coords = i[:3]  # x, y, zの3要素を抽出
+        # 前回の座標が存在する場合，ユークリッド距離を計算
+        if previous_coords is not None:
+            distance = math.sqrt(
+                sum(
+                    (current - previous) ** 2
+                    for current, previous in zip(current_coords, previous_coords)
+                )
+            )
+            # 距離が50以下の場合はスキップ
+            if distance <= 10:
+                continue
+
+        print(i)
+        mc.sync_send_coords(i, draw_speed, 1)  # Send coordinates to the robot arm
+        # 現在の座標を前回の座標として保存
+        previous_coords = current_coords
+
+        # time.sleep(
+        #     SLEEP_TIME
+        # )  # Wait 3.5 seconds for the robot arm movement to complete
 elif type == 2:
-    coords_data = process_gcode('triangle.nc')
+    coords_data = process_gcode("triangle.nc")
     for i in coords_data:
         mc.send_coords(i, draw_speed, 1)
         time.sleep(SLEEP_TIME)
 elif type == 3:
-    coords_data = process_gcode('five_point_star.nc')
+    coords_data = process_gcode("five_point_star.nc")
     for i in coords_data:
         mc.send_coords(i, draw_speed, 1)
         time.sleep(SLEEP_TIME)
