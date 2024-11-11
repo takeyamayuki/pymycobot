@@ -94,9 +94,7 @@ type = int(input("Please input 1-4（1-square 2-triangle 3-five point star 4-qui
 if type == 1:
     # Pass in the gcode file path and obtain the coordinate data
     # File path can be customized
-    coords_data = process_gcode(
-        "/Users/yukitakeyama/Documents/research/ClayTablet_HCI211robot/stroke_data.gcode"
-    )
+    coords_data = process_gcode("stroke_data.gcode")
     # Send coordinates to the robot arm one by one
     for i in coords_data:
         # 現在の座標を取得
